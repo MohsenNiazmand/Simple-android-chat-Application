@@ -238,6 +238,8 @@ public class MainActivity extends AppCompatActivity implements DefaultChatsAdapt
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (disposable!=null)
+            disposable.dispose();
         socket.disconnect();
     }
 }
