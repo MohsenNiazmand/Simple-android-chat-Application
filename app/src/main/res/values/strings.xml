@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SimpleChatAndroid</string>
+    <string name="write_your_message">Write Your Message</string>
+</resources>
