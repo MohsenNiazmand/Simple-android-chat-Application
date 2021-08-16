@@ -42,7 +42,7 @@
                 android:layout_gravity="bottom"
                 android:layout_marginStart="5dp"
                 android:textColor="@color/lightGrayFont"
-                android:textSize="8sp"
+                android:textSize="10sp"
                 tools:text="17:15"/>
 
 

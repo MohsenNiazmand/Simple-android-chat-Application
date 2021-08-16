@@ -21,13 +21,12 @@
         android:id="@+id/rvDefaultMessages"
         android:layout_width="match_parent"
         android:layout_height="46dp"
-        android:layout_marginBottom="5dp"
-        android:layout_marginHorizontal="16dp"
         android:layout_above="@id/messagePart"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="5dp"
         android:clipToPadding="true"
-        android:layoutDirection="rtl"
         android:orientation="horizontal"
-        android:scrollbars="none"/>
+        android:scrollbars="none" />
 
     <RelativeLayout
         android:id="@+id/messagePart"
