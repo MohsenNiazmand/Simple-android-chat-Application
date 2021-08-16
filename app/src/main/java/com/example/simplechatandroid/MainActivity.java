@@ -6,14 +6,17 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
+import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -65,6 +68,13 @@ public class MainActivity extends AppCompatActivity implements DefaultChatsAdapt
         recyclerViewChats.setAdapter(chatAdapter);
 
 
+        // in this scenario we send message from user to an unique user and this feature works with socket
+        //and connection between them is done through tokens in server
+        //you can customize these features as you like for example you can add sending images feature or ticking messages or...
+        //and many other things As required
+
+
+        //First we send our message to server
         btSendChat.setOnClickListener(view -> {
             if (etChat.getText().length()>0){
                 JSONObject jsonObject=new JSONObject();
@@ -84,15 +94,80 @@ public class MainActivity extends AppCompatActivity implements DefaultChatsAdapt
             }
         });
 
+        //In this event, Server send us our message when it saves in database and we show it
+        socket.on("Sent Messages Socket",sentMessages);
+
+        //In this event, the server sends us the other person's messages and we show it
+        socket.on("Receiving Messages Socket", getMessages);
 
     }
 
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        socket.disconnect();
-    }
+    public Emitter.Listener sentMessages = new Emitter.Listener() {
+        @Override
+        public void call(Object... args) {
+            JSONObject data = (JSONObject)args[0];
+            handler.post(() -> {
+                try {
+                    JSONArray sentMessages;
+                    sentMessages=data.getJSONArray("messages");
+                    int index=sentMessages.length()-1;
+                    JSONObject messageObject=sentMessages.getJSONObject(index);
+                    time = messageObject.getString("time");
+                    //isSendBoolean for tick feature
+                    sender_type=messageObject.getString("sender_type");
+                    message=messageObject.getString("message");
+                    JSONObject jsonObject=new JSONObject();
+                    jsonObject.put("time",time);
+                    jsonObject.put("sender_type",sender_type);
+                    jsonObject.put("messages",message);
+//                    jsonObject.put("isSent",isSendBoolean);
+                    chatProgressBar.setVisibility(View.GONE);
+                    btSendChat.setVisibility(View.VISIBLE);
+                    recyclerViewDefaultMessages.setVisibility(View.VISIBLE);
+                    chatAdapter.newMessage(jsonObject);
+                    recyclerViewChats.smoothScrollToPosition(chatAdapter.getItemCount());
+
+                }catch (Exception e){
+                    e.printStackTrace();
+
+                }
+
+            });
+        }
+    };
+    public Emitter.Listener getMessages = new Emitter.Listener() {
+        @Override
+        public void call(Object... args) {
+            JSONObject data = (JSONObject)args[0];
+            handler.post(() -> {
+                try {
+
+                    JSONArray receiveMessages;
+                    receiveMessages=data.getJSONArray("messages");
+                    int index=receiveMessages.length()-1;
+                    JSONObject messageObject=receiveMessages.getJSONObject(index);
+                    time = messageObject.getString("time");
+                    sender_type=messageObject.getString("sender_type");
+                    message=messageObject.getString("message");
+                    JSONObject jsonObject=new JSONObject();
+                    jsonObject.put("time",time);
+                    jsonObject.put("sender_type",sender_type);
+                    jsonObject.put("messages",message);
+                    chatAdapter.newMessage(jsonObject);
+                    recyclerViewChats.smoothScrollToPosition(chatAdapter.getItemCount());
+
+
+                }catch (Exception e){
+                    e.printStackTrace();
+
+                }
+
+            });
+        }
+    };
+
+
 
     @Override
     public void onItemClick(String defaultMessage, int position) {
@@ -107,5 +182,12 @@ public class MainActivity extends AppCompatActivity implements DefaultChatsAdapt
         }catch (JSONException e){
             e.printStackTrace();
         }
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        socket.disconnect();
     }
 }
