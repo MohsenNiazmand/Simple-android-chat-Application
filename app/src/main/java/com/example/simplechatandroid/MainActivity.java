@@ -19,7 +19,7 @@ import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements DefaultChatsAdapter.ItemEventListener {
     private String token,time,sender_type,message;
     private ImageView btSendChat;
     private EditText etChat;
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
         chatProgressBar=findViewById(R.id.progressChat);
 
         recyclerViewDefaultMessages=findViewById(R.id.rvDefaultMessages);
-        defaultChatsAdapter =new DefaultChatsAdapter();
+        defaultChatsAdapter =new DefaultChatsAdapter(this);
         LinearLayoutManager defaultMessageslayoutManager= new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         recyclerViewDefaultMessages.setLayoutManager(defaultMessageslayoutManager);
         recyclerViewDefaultMessages.setAdapter(defaultChatsAdapter);
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     jsonObject.put("token",token);
                     jsonObject.put("messages",etChat.getText());
-                    socket.emit("driver_chat_employer",jsonObject);
+                    socket.emit("Sending Message Socket Address",jsonObject);
 
                 }catch (JSONException e){
                     e.printStackTrace();
@@ -92,5 +92,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         socket.disconnect();
+    }
+
+    @Override
+    public void onItemClick(String defaultMessage, int position) {
+        JSONObject jsonObject=new JSONObject();
+        try {
+            jsonObject.put("token",token);
+            jsonObject.put("messages",defaultMessage);
+            socket.emit("Sending Message Socket Address",jsonObject);
+            chatProgressBar.setVisibility(View.VISIBLE);
+            btSendChat.setVisibility(View.GONE);
+            recyclerViewDefaultMessages.setVisibility(View.INVISIBLE);
+        }catch (JSONException e){
+            e.printStackTrace();
+        }
     }
 }
