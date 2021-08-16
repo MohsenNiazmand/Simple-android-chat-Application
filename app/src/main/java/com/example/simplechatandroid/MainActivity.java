@@ -6,12 +6,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 
@@ -59,6 +63,27 @@ public class MainActivity extends AppCompatActivity {
         LinearLayoutManager chatsLinearLayoutManager=new LinearLayoutManager(this, RecyclerView.VERTICAL, false);
         recyclerViewChats.setLayoutManager(chatsLinearLayoutManager);
         recyclerViewChats.setAdapter(chatAdapter);
+
+
+        btSendChat.setOnClickListener(view -> {
+            if (etChat.getText().length()>0){
+                JSONObject jsonObject=new JSONObject();
+                try {
+                    jsonObject.put("token",token);
+                    jsonObject.put("messages",etChat.getText());
+                    socket.emit("driver_chat_employer",jsonObject);
+
+                }catch (JSONException e){
+                    e.printStackTrace();
+                }
+                chatProgressBar.setVisibility(View.VISIBLE);
+                btSendChat.setVisibility(View.GONE);
+                recyclerViewDefaultMessages.setVisibility(View.INVISIBLE);
+                etChat.setText("");
+
+            }
+        });
+
 
     }
 
