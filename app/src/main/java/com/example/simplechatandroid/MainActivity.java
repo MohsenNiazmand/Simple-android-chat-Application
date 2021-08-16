@@ -1,9 +1,9 @@
 package com.example.simplechatandroid;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -11,16 +11,32 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
+import com.example.simplechatandroid.data.ChatItem;
+import com.example.simplechatandroid.internet_service.ApiService;
 import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.util.List;
+
+import io.reactivex.SingleObserver;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
+
+
+
+// in this scenario we send message from user to an unique user and this feature works with socket
+//and connection between them is done through tokens in server
+//you can customize these features as you like for example you can add sending images feature or ticking messages or...
+//and many other things As required
 
 public class MainActivity extends AppCompatActivity implements DefaultChatsAdapter.ItemEventListener {
     private String token,time,sender_type,message;
@@ -32,6 +48,8 @@ public class MainActivity extends AppCompatActivity implements DefaultChatsAdapt
     private DefaultChatsAdapter defaultChatsAdapter;
     private Handler handler;
     private Socket socket;
+    private ApiService apiService;
+    private Disposable disposable;
 
     {
         try {
@@ -48,9 +66,7 @@ public class MainActivity extends AppCompatActivity implements DefaultChatsAdapt
         setContentView(R.layout.activity_main);
         socket.connect();
         handler = new Handler();
-
-
-
+        apiService= new ApiService(this);
 
         etChat=findViewById(R.id.etMessage);
         btSendChat=findViewById(R.id.btnSendMessage);
@@ -68,10 +84,44 @@ public class MainActivity extends AppCompatActivity implements DefaultChatsAdapt
         recyclerViewChats.setAdapter(chatAdapter);
 
 
-        // in this scenario we send message from user to an unique user and this feature works with socket
-        //and connection between them is done through tokens in server
-        //you can customize these features as you like for example you can add sending images feature or ticking messages or...
-        //and many other things As required
+        //this request loads previous messages from server,if you need you can add the feature of loading messages from local repository
+        apiService.getMessages(token)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleObserver<List<ChatItem>>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        disposable=d;
+                    }
+
+                    @Override
+                    public void onSuccess(@NonNull List<ChatItem> chatItems) {
+
+
+                        try {
+                            for (int i = 0; i < chatItems.get(0).getMessages().size(); i++) {
+                                JSONObject jsonObject=new JSONObject();
+                                jsonObject.put("time",chatItems.get(0).getMessages().get(i).getTime());
+                                jsonObject.put("sender_type",chatItems.get(0).getMessages().get(i).getSender_type());
+                                jsonObject.put("messages",chatItems.get(0).getMessages().get(i).getMessage());
+                                chatAdapter.newMessage(jsonObject);
+                                recyclerViewChats.scrollToPosition(chatItems.get(0).getMessages().size()-1);
+                            }
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+
+
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        Log.e("TAG", "onError: "+e.toString() );
+                    }
+                });
+
 
 
         //First we send our message to server
